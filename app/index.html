@@ -63,12 +63,12 @@
                 <canvas id="weather-info"></canvas>
                 <div>
                     <input type="text" value="Enter City Name Here" id="city_names" data-provide="typeahead" autocomplete="off">
-                    <input type="button" value="Search">
+                    <input type="button" value="Search" id="search">
                 </div>
             </div>
 
             <div class="row marketing">
-                <div class="col-lg-6">
+                <div class="col-lg-6" id="websocket-info" style="display:none">
                     <h4>Messsage:</h4>
                     <p>websocket took <span id="timestamp"></span> seconds to return message.</p>
                 </div>

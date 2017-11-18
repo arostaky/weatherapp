@@ -15,6 +15,16 @@ function success_handler(position) {
     // console.log('posLat: ', latitude);
     // console.log('posLon: ', longitude);
     // console.log('posAccuracy: ', accuracy);
+    writeCanvas(null, null, null, 'Loading...');
+    useRequest(latitude, longitude, accuracy)
+}
+
+function error_handler() {
+    //
+    console.log('Geolocation is not enabled. Please enable to use this feature');
+}
+
+function useRequest(latitude, longitude, accuracy) {
     $.ajax({
         url: api_url,
         method: 'GET',
@@ -23,7 +33,10 @@ function success_handler(position) {
                 console.log('Page not found');
             },
             401: function() {
-                console.log('Unauthorized')
+                console.log('Unauthorized');
+            },
+            202: function() {
+                console.log('Accepted');
             }
         },
         success: function(data) {
@@ -41,12 +54,33 @@ function success_handler(position) {
     });
 }
 
-function error_handler() {
-    //
-    console.log('Geolocation is not enabled. Please enable to use this feature');
+function searchRequest() {
+    var city = $('#city_names').val();
+    $.ajax({
+        url: 'http://api.openweathermap.org/data/2.5/find',
+        jsonp: 'callback',
+        dataType: 'jsonp',
+        data: {
+            q: city,
+            units: 'metric',
+            appid: appid,
+            mode: 'json'
+        },
+        success: function(data) {
+            var tempr = data.list[0].main.temp;
+            var location = data.list[0].name;
+            //var desc = data.weather.description;
+            console.log(tempr + '°' + location);
+            var high_temp = data.list[0].main.temp_max;
+            var low_temp = data.list[0].main.temp_min;
+            text = location + ' has high of ' + high_temp + '°C and low of ' + low_temp + '°C';
+            writeCanvas(null, null, null, text);
+            WebSocketConnect(high_temp);
+        }
+    });
 }
 
-function writeCanvas(location, high_temp, low_temp) {
+function writeCanvas(location, high_temp, low_temp, resetText) {
     // Get the canvas element.
     if (!elem || !elem.getContext) {
         return;
@@ -60,10 +94,16 @@ function writeCanvas(location, high_temp, low_temp) {
     context.font = 'bold 30px sans-serif';
     context.textBaseline = 'top';
 
-    if (context.fillText) {
+    if (context.fillText && resetText == null) {
         step = 0;
         steps = elem.width - 50;
         text = location + ' has high of ' + high_temp + '°C and low of ' + low_temp + '°C';
+        RunTextRightToLeft();
+    }
+    if (context.fillText && resetText != null) {
+        step = 0;
+        steps = elem.width - 50;
+        text = resetText;
         RunTextRightToLeft();
     }
 }
@@ -87,6 +127,7 @@ function RunTextRightToLeft() {
 
 function initScripts() {
     //might add typeahead features to search and autocomplete
+    // wip
     // $('#city_names').typeahead({
     //     minLength: 3,
     //     highlight: true
@@ -120,9 +161,18 @@ function WebSocketConnect(temp_max) {
         console.log('Server: ' + e.data);
         console.log('Server time?: ' + e.timeStamp);
         var seconds = parseInt((e.timeStamp / 1000) % 60);
+        $('#websocket-info').fadeIn('fast');
         $('#timestamp').text(seconds);
     };
 }
 window.addEventListener('load', function() {
     initScripts();
+    $('#city_names').focus(function() {
+        writeCanvas(null, null, null, '...');
+        $('#websocket-info').fadeOut('fast');
+        console.log('focus?');
+    });
+    $('#search').click(function() {
+        searchRequest();
+    });
 }, false);
