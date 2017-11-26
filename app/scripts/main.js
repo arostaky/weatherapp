@@ -21,7 +21,7 @@ function success_handler(position) {
 
 function error_handler() {
     //
-    console.log('Geolocation is not enabled. Please enable to use this feature');
+    alert('Geolocation is not enabled. Please enable to use this feature');
 }
 
 function useRequest(latitude, longitude, accuracy) {
@@ -74,6 +74,7 @@ function searchRequest() {
             var high_temp = data.list[0].main.temp_max;
             var low_temp = data.list[0].main.temp_min;
             text = location + ' has high of ' + high_temp + '°C and low of ' + low_temp + '°C';
+            clearCanvas();
             writeCanvas(null, null, null, text);
             WebSocketConnect(high_temp);
         }
@@ -123,6 +124,10 @@ function RunTextRightToLeft() {
         step = 0;
     }
     //console.log(step);
+}
+
+function clearCanvas() {
+    context.clearRect(0, 0, elem.width, elem.height);
 }
 
 function initScripts() {

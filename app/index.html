@@ -37,9 +37,11 @@
 
             <div class="jumbotron">
                 <canvas id="weather-info"></canvas>
-                <div>
-                    <input type="text" value="Enter City Name Here" id="city_names" data-provide="typeahead" autocomplete="off">
-                    <input type="button" value="Search" id="search">
+                <div class="input-group">
+                    <input type="text" placeholder="Enter City Name Here" id="city_names" data-provide="typeahead" autocomplete="off" class="form-control">
+                    <span class="input-group-btn">
+                    <button type="button" class="btn btn-secondary" id="search">Search</button>
+                    </span>
                 </div>
             </div>
 

@@ -28,3 +28,18 @@ body {
         border: 1px solid #d9d9d9;
     }
 }
+
+.input-group .form-control {
+    height: 38px;
+}
+
+.input-group-btn:last-child>.btn,
+.input-group-btn:last-child>.btn-group {
+    z-index: 2;
+    margin-left: -1px;
+    border: 1px solid lightgrey;
+}
+
+.jumbotron {
+    background-color: darkseagreen;
+}
