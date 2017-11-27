@@ -4,7 +4,8 @@ var latitude, longitude, accuracy, appid = '83d1fe91528b3e86e6d74be49baef889',
     step, steps = 0,
     delay = 25,
     text,
-    connection;
+    connection, stop = false,
+    seconds;
 
 function success_handler(position) {
     /* Get the location data */
@@ -56,6 +57,7 @@ function useRequest(latitude, longitude, accuracy) {
 
 function searchRequest() {
     var city = $('#city_names').val();
+    stop = true;
     $.ajax({
         url: 'http://api.openweathermap.org/data/2.5/find',
         jsonp: 'callback',
@@ -66,7 +68,23 @@ function searchRequest() {
             appid: appid,
             mode: 'json'
         },
+        statusCode: {
+            404: function() {
+                console.log('Page not found');
+            },
+            401: function() {
+                console.log('Unauthorized');
+            },
+            202: function() {
+                console.log('Accepted');
+            }
+        },
         success: function(data) {
+            console.log('show data: ' + JSON.stringify(data));
+            if (data.count == 0) {
+                alert('citi not found');
+                return;
+            }
             var tempr = data.list[0].main.temp;
             var location = data.list[0].name;
             //var desc = data.weather.description;
@@ -74,15 +92,23 @@ function searchRequest() {
             var high_temp = data.list[0].main.temp_max;
             var low_temp = data.list[0].main.temp_min;
             text = location + ' has high of ' + high_temp + '°C and low of ' + low_temp + '°C';
-            clearCanvas();
+            stop = false;
             writeCanvas(null, null, null, text);
             WebSocketConnect(high_temp);
+        },
+        error: function(xhr, ajaxOptions, thrownError) {
+            alert(xhr.status);
+            alert(thrownError);
         }
+    }).done(function() {
+        return;
+        //console.log('ajax done?')
     });
 }
 
 function writeCanvas(location, high_temp, low_temp, resetText) {
     // Get the canvas element.
+    //console.log('count?');
     if (!elem || !elem.getContext) {
         return;
     }
@@ -90,9 +116,9 @@ function writeCanvas(location, high_temp, low_temp, resetText) {
     if (!context) {
         return;
     }
-    context.fillStyle = '#00f';
+    context.fillStyle = '#FFF';
     //elem.width = window.innerWidth;
-    context.font = 'bold 30px sans-serif';
+    context.font = 'bold 20px sans-serif';
     context.textBaseline = 'top';
 
     if (context.fillText && resetText == null) {
@@ -119,14 +145,31 @@ function RunTextRightToLeft() {
     context.restore();
     if (step < steps) {
         var t = setTimeout('RunTextRightToLeft()', delay);
+        // for (var i = 0; step < steps; i--) {
+        //     step = i;
+        // }
     }
     if (step < -elem.width * 2) {
         step = 0;
+        steps = 0;
     }
-    //console.log(step);
+    if (stop == true) {
+        step = 0;
+        steps = 0;
+        return;
+    }
+    //console.log('steps: ' + step);
+}
+
+function stopThis() {
+    setTimeout(RunTextRightToLeft(), 100);
 }
 
 function clearCanvas() {
+    stop = true;
+    //setTimeout('RunTextRightToLeft()', 0);
+    step = 0;
+    steps = 0;
     context.clearRect(0, 0, elem.width, elem.height);
 }
 
@@ -145,11 +188,12 @@ function initScripts() {
             error_handler, { enableHighAccuracy: true });
     } else {
         //
-        console.log('Geolocation is not supported by this device');
+        alert('Geolocation is not supported by this device');
     }
 }
 
 function WebSocketConnect(temp_max) {
+    var t0 = performance.now();
     connection = new WebSocket('ws://demos.kaazing.com/echo');
     // When the connection is open, send some data to the server
     connection.onopen = function() {
@@ -165,14 +209,28 @@ function WebSocketConnect(temp_max) {
     connection.onmessage = function(e) {
         console.log('Server: ' + e.data);
         console.log('Server time?: ' + e.timeStamp);
-        var seconds = parseInt((e.timeStamp / 1000) % 60);
+
+        //seconds = 0;
+        connection.close();
+    };
+    connection.onclose = function(e) {
+        //alert("Connection closed.");
+        console.log(JSON.stringify(e.timeStamp));
+        var t1 = performance.now();
+        var ms = t1 - t0;
+        seconds = parseInt((ms / 1000) % 60);
         $('#websocket-info').fadeIn('fast');
         $('#timestamp').text(seconds);
-    };
+        $('#timestamp_ms').text(ms);
+
+        console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
+    }
 }
 window.addEventListener('load', function() {
     initScripts();
     $('#city_names').focus(function() {
+        clearCanvas();
+        //seconds = 0;
         writeCanvas(null, null, null, '...');
         $('#websocket-info').fadeOut('fast');
         console.log('focus?');
